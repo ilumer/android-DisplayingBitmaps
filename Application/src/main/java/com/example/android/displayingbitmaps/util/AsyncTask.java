@@ -247,6 +247,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
     @TargetApi(11)
     private static class SerialExecutor implements Executor {
         final ArrayDeque<Runnable> mTasks = new ArrayDeque<Runnable>();
+        //TODO:为什么需要ArrayDeque
         Runnable mActive;
 
         public synchronized void execute(final Runnable r) {
@@ -304,6 +305,9 @@ public abstract class AsyncTask<Params, Progress, Result> {
      * Creates a new asynchronous task. This constructor must be invoked on the UI thread.
      */
     public AsyncTask() {
+        //AsyncTask的初始化
+
+        //生成一个Callable
         mWorker = new WorkerRunnable<Params, Result>() {
             public Result call() throws Exception {
                 mTaskInvoked.set(true);
@@ -314,6 +318,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
             }
         };
 
+        //初始化一个可以取消的异步执行
         mFuture = new FutureTask<Result>(mWorker) {
             @Override
             protected void done() {
@@ -342,6 +347,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
         @SuppressWarnings("unchecked")
         Message message = sHandler.obtainMessage(MESSAGE_POST_RESULT,
                 new AsyncTaskResult<Result>(this, result));
+        //在doInBackground实现耗时的操作然后现在通过handler实现视图更新
         message.sendToTarget();
         return result;
     }
@@ -396,6 +402,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
      */
     @SuppressWarnings({"UnusedDeclaration"})
     protected void onPostExecute(Result result) {
+        //更新视图
     }
 
     /**
@@ -558,6 +565,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
      */
     public final AsyncTask<Params, Progress, Result> execute(Params... params) {
         return executeOnExecutor(sDefaultExecutor, params);
+        //AsyncTask启动的开始
     }
 
     /**
@@ -595,6 +603,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
      */
     public final AsyncTask<Params, Progress, Result> executeOnExecutor(Executor exec,
             Params... params) {
+        //是否可以并发需要自己实现Executor
         if (mStatus != Status.PENDING) {
             switch (mStatus) {
                 case RUNNING:
@@ -606,12 +615,13 @@ public abstract class AsyncTask<Params, Progress, Result> {
                             + "(a task can be executed only once)");
             }
         }
-
+        //检查同一个Asynctask的使用状态
         mStatus = Status.RUNNING;
 
         onPreExecute();
-
+        //在doInBackground前更新UI线程
         mWorker.mParams = params;
+        //获取了参数
         exec.execute(mFuture);
 
         return this;
@@ -676,6 +686,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
         }
     }
 
+    //类似与Runnable
     private static abstract class WorkerRunnable<Params, Result> implements Callable<Result> {
         Params[] mParams;
     }
@@ -683,6 +694,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
     @SuppressWarnings({"RawUseOfParameterizedType"})
     private static class AsyncTaskResult<Data> {
         final AsyncTask mTask;
+        //this Task
         final Data[] mData;
 
         AsyncTaskResult(AsyncTask task, Data... data) {
